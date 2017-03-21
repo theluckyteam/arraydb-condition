@@ -2,9 +2,9 @@
 namespace luckyteam\arraydb;
 
 /**
- * Условие сравнивающее значение модели с переданным в качестве параметра значением
+ * Условие сравнения
  *
- * Пример обозначения условия:
+ * Example
  * ['>', 'attribute1', 1]
  */
 class ComparisonCondition extends Condition
@@ -39,26 +39,18 @@ class ComparisonCondition extends Condition
      */
     const LESS_OR_EQUAL = '<=';
 
-
     /**
      * @var string операция сравнения
      */
     private $_operation;
 
     /**
-     * @var string наименование атрибута к сравнению
-     */
-    private $_attribute;
-
-
-    /**
      * @inheritdoc
      */
-    public function __construct($condition, ConditionBuilder $builder = null)
+    public function __construct($operation, $attribute, $condition, ConditionBuilder $builder = null)
     {
-        list($this->_operation, $this->_attribute, $this->_condition) = $condition;
-
-        parent::__construct($this->_condition, $builder);
+        $this->_operation = $operation;
+        parent::__construct($attribute, $condition, $builder);
     }
 
     /**
@@ -67,10 +59,11 @@ class ComparisonCondition extends Condition
     public function execute($model)
     {
         // Если значение атрибута существует
-        if ($value = $this->get($model, $this->_attribute)) {
-            $condition = $this->_condition;
+        if ($value = $this->get($model, $this->getAttribute())) {
+            $condition = $this->getCondition();
+            $operation = $this->getOperation();
 
-            switch ($this->_operation) {
+            switch ($operation) {
                 // Значение атрибута модели равно сравниваемому
                 case self::EQUAL:
                     return $value === $condition;
@@ -104,5 +97,10 @@ class ComparisonCondition extends Condition
         } else {
             return false;
         }
+    }
+
+    public function getOperation()
+    {
+        return $this->_operation;
     }
 }

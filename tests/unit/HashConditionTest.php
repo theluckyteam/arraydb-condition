@@ -28,7 +28,14 @@ class HashConditionTest extends Unit
 
         foreach ($conditions as $condition) {
             $condition = $builder->build($condition);
+            // Условие является экземпляром класса HashCondition
             $this->assertTrue($condition instanceof HashCondition);
+            // Значение атрибута для сложного условия не предусмотрено
+            $this->assertNull($condition->getAttribute());
+            // В качестве условия - вложенное условие
+            $this->assertTrue(is_array($condition->getCondition()));
+            // Значение построителя возвращается
+            $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
         }
     }
 

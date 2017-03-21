@@ -22,7 +22,15 @@ class AndConditionTest extends Unit
                 'attribute2' => 'value2'
             ]
         ]);
+
+        // Условие является экземпляром класса AndCondition
         $this->assertTrue($condition instanceof AndCondition);
+        // Значение атрибута для сложного условия не предусмотрено
+        $this->assertNull($condition->getAttribute());
+        // В качестве условия - вложенное условие
+        $this->assertTrue(is_array($condition->getCondition()));
+        // Значение построителя возвращается
+        $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
     }
 
     /**
