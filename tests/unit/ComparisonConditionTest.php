@@ -21,15 +21,10 @@ class ComparisonConditionTest extends Unit
             'more', 'attribute1' , 100
         ]);
 
-        // Условие является экземпляром класса ComparisonCondition
         $this->assertTrue($condition instanceof ComparisonCondition);
-        // Значение операции
         $this->assertEquals($condition->getOperation(), ComparisonCondition::MORE);
-        // Значение атрибута для сложного условия не предусмотрено
         $this->assertEquals($condition->getAttribute(), 'attribute1');
-        // В качестве условия - сопоставляемое значение
         $this->assertEquals($condition->getCondition(), 100);
-        // Значение построителя возвращается
         $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
     }
 

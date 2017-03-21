@@ -1,6 +1,7 @@
 <?php
 
 use Codeception\Test\Unit;
+use luckyteam\arraydb\Condition;
 use luckyteam\arraydb\ConditionBuilder;
 use luckyteam\arraydb\NotCondition;
 
@@ -21,6 +22,9 @@ class NotConditionTest extends Unit
             ]
         ]);
         $this->assertTrue($condition instanceof NotCondition);
+        $this->assertNull($condition->getAttribute());
+        $this->assertTrue($condition->getCondition() instanceof Condition);
+        $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
     }
 
     /**

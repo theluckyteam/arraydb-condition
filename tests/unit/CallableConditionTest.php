@@ -19,6 +19,9 @@ class CallableConditionTest extends Unit
             return true;
         });
         $this->assertTrue($condition instanceof CallableCondition);
+        $this->assertNull($condition->getAttribute());
+        $this->assertTrue(is_callable($condition->getCondition()));
+        $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
     }
 
     /**
