@@ -2,33 +2,24 @@
 namespace luckyteam\arraydb;
 
 /**
- * Условие проверяющее несколько условий, соединенных оператором И
+ * Условие проверяющее несколько условий, соединенных оператором AND
  *
- * Пример обозначения условия:
- * ['and', ['>', 'attribute1', 1], ['<', 'attribute2', 2]]
+ * Example
+ * [
+ *    'and', ['>', 'attribute1', 1], ['<', 'attribute2', 2]
+ * ]
  */
 class AndCondition extends Condition
 {
     /**
      * @inheritdoc
      */
-    public function __construct($condition, ConditionBuilder $builder = null)
-    {
-        foreach ($condition as &$part) {
-            $part = $builder->build($part);
-        }
-        parent::__construct($condition, $builder);
-    }
-
-    /**
-     * @inheritdoc
-     */
     public function execute($model)
     {
-        /** @var Condition[] $condition */
-        $condition = $this->_condition;
-        foreach ($condition as $part) {
-            if (!$part->execute($model)) {
+        /** @var Condition[] $conditions */
+        $conditions = $this->getCondition();
+        foreach ($conditions as $condition) {
+            if (!$condition->execute($model)) {
                 return false;
             }
         }

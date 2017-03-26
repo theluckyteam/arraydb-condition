@@ -31,6 +31,9 @@ class LikeConditionTest extends Unit
         foreach ($conditions as $condition) {
             $condition = $builder->build($condition);
             $this->assertTrue($condition instanceof LikeCondition);
+            $this->assertEquals($condition->getAttribute(), 'attribute');
+            $this->assertEquals($condition->getCondition(), "/F.o/");
+            $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
         }
     }
 

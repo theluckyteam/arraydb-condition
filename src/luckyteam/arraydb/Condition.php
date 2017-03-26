@@ -2,39 +2,76 @@
 namespace luckyteam\arraydb;
 
 /**
- * Условие проверяющее значение на основании функции обратного вызова
+ * Экземпляр условия
  */
 abstract class Condition
 {
     /**
-     * @var ConditionBuilder построитель условий, используемый для строительства более сложных условий
+     * @var string|array имя атрибута
      */
-    public $builder;
+    private $_attribute;
 
     /**
-     * @var mixed условие, над которым необходимо выполнить проверку
+     * @var mixed условие к атрибуту
      */
-    protected $_condition;
+    private $_condition;
 
     /**
-     * Создать экземпляр условия
+     * @var ConditionBuilder построитель условий
+     */
+    private $_builder;
+
+    /**
+     * Конструктор класса
      *
-     * @param mixed $condition условие, которое следует проверить
+     * @param mixed $attribute имя атрибута
+     * @param mixed $condition условие к атрибуту
      * @param ConditionBuilder $builder построитель условий
      */
-    public function __construct($condition, ConditionBuilder $builder = null)
+    public function __construct($attribute, $condition, ConditionBuilder $builder = null)
     {
-        $this->_condition = $condition;
-        $this->builder = $builder;
+        $this->_attribute   = $attribute;
+        $this->_condition   = $condition;
+        $this->_builder     = $builder;
     }
 
     /**
-     * Выполнить рассчет условия над объектом
+     * Выполнить/применить условие
      *
      * @param mixed $model объект, над которым следует выполнить проверку условия
-     * @return boolean результат рассчета условия
+     * @return boolean результат проверки условия
      */
     public abstract function execute($model);
+
+    /**
+     * Вернуть имя атрибута
+     *
+     * @return string|array
+     */
+    public function getAttribute()
+    {
+        return $this->_attribute;
+    }
+
+    /**
+     * Вернуть условие к атрибуту
+     *
+     * @return mixed
+     */
+    public function getCondition()
+    {
+        return $this->_condition;
+    }
+
+    /**
+     * Вернуть построитель условий
+     *
+     * @return ConditionBuilder
+     */
+    public function getBuilder()
+    {
+        return $this->_builder;
+    }
 
     /**
      * Получить вложенное значение по ключу

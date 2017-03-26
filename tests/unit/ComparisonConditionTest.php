@@ -2,6 +2,7 @@
 
 use Codeception\Test\Unit;
 use luckyteam\arraydb\ComparisonCondition;
+use luckyteam\arraydb\Condition;
 use luckyteam\arraydb\ConditionBuilder;
 
 /**
@@ -15,10 +16,16 @@ class ComparisonConditionTest extends Unit
     public function testBuildClass()
     {
         $builder = new ConditionBuilder();
+        /** @var ComparisonCondition $condition */
         $condition = $builder->build([
-            '>=', 'attribute1' , 100
+            'more', 'attribute1' , 100
         ]);
+
         $this->assertTrue($condition instanceof ComparisonCondition);
+        $this->assertEquals($condition->getOperation(), ComparisonCondition::MORE);
+        $this->assertEquals($condition->getAttribute(), 'attribute1');
+        $this->assertEquals($condition->getCondition(), 100);
+        $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
     }
 
     /**

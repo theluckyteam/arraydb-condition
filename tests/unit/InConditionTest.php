@@ -31,6 +31,9 @@ class InConditionTest extends Unit
         foreach ($conditions as $condition) {
             $condition = $builder->build($condition);
             $this->assertTrue($condition instanceof InCondition);
+            $this->assertEquals($condition->getAttribute(), 'attribute');
+            $this->assertEquals($condition->getCondition(), ['Foo' => 0, 'Bzz' => 1]);
+            $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
         }
     }
 
