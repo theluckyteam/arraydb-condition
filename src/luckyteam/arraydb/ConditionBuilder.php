@@ -26,12 +26,12 @@ class ConditionBuilder
      * @var array способы строительства условий
      */
     private $_conditionBuilders = [
-        'and' => 'CompositeCondition',
-        'or' => 'CompositeCondition',
+        'and' => 'LogicalCondition',
+        'or' => 'LogicalCondition',
         'in' => 'InCondition',
         'between' => 'BetweenCondition',
         'like' => 'LikeCondition',
-        'not' => 'SimpleCondition',
+        'not' => 'NotCondition',
     ];
 
     /**
@@ -162,7 +162,7 @@ class ConditionBuilder
         // Условие является функцией обратного вызова
         if ($this->isCallableCondition($condition)) {
             $class = $this->prepareConditionClass('callable');
-            return $this->ensureCondition($class, $condition, $this);
+            return new $class(null, $condition, $this);
 
         // Условие являющееся массивом рассматриваем в соответсвии соследующими правилами
         } elseif ($this->isArrayCondition($condition)) {
@@ -184,7 +184,11 @@ class ConditionBuilder
                 }
                 $operand = reset($condition);
                 if ($this->isComparisonOperand($operand)) {
-                    return new ComparisonCondition($this->prepareComparisonOperand($condition), $this);
+                    /** @var ComparisonCondition $class */
+                    $class = $this->prepareConditionClass('comparison');
+                    $condition = $this->prepareComparisonOperand($condition);
+                    list($operation, $attribute, $value) = $condition;
+                    return new $class($operation, $attribute, $value, $this);
                 }
             }
         }
@@ -251,19 +255,22 @@ class ConditionBuilder
     }
 
     /**
-     * Построить сложное условие, умеющее объединять в себе простые
+     * Построить логическое условие
      *
      * @param string $operand операнд, для которого следует построить условие
-     * @param mixed $condition условие для строительства объекта
+     * @param mixed $conditions условие для строительства объекта
      * @param ConditionBuilder $builder построитель условий
      * @return Condition экземпляр условия
      * @throws BuildConditionException
      */
-    protected function buildCompositeCondition($operand, $condition, $builder)
+    protected function buildLogicalCondition($operand, $conditions, $builder)
     {
         $class = $this->prepareConditionClass($operand);
-
-        return $this->ensureCondition($class, $condition, $builder);
+        $buildConditions = [];
+        foreach ($conditions as $condition) {
+            $buildConditions[] = $builder->build($condition);
+        }
+        return new $class(null, $buildConditions, $builder);
     }
 
     /**
@@ -275,14 +282,16 @@ class ConditionBuilder
      * @return Condition экземпляр условия
      * @throws BuildConditionException
      */
-    protected function buildSimpleCondition($operand, $condition, $builder)
+    protected function buildNotCondition($operand, $condition, $builder)
     {
         if (count($condition) !== 1) {
             throw new BuildConditionException('Condition is incorrect.');
         }
         $class = $this->prepareConditionClass($operand);
+        $condition = reset($condition);
+        $condition = $builder->build($condition);
 
-        return $this->ensureCondition($class, reset($condition), $builder);
+        return new $class(null, $condition, $builder);
     }
 
     /**
@@ -297,9 +306,18 @@ class ConditionBuilder
     protected function buildInCondition($operand, $condition, $builder)
     {
         $count = count($condition);
+        // Условие не подходит
+        if ($operand != 'in'
+                || 1 > $count || $count > 3) {
+            throw new BuildConditionException('"In" condition is incorrect.');
+        }
+
         // Формат, избранный в первоначальной реализации
         // ['in' => ['attribute' => ['Foo', 'Bzz']]]
         if ($count === 1) {
+            $condition = reset($condition);
+            $keys = array_keys($condition);
+            $attribute = reset($keys);
             $condition = reset($condition);
 
         // Формат, реализованный для соответсвия Yii2
@@ -307,17 +325,16 @@ class ConditionBuilder
         } elseif ($count === 2) {
             $attribute = array_shift($condition);
             $condition = array_shift($condition);
-            $condition = [
-                $attribute => $condition,
-            ];
+        }
 
-        // Если массив, представляющий условие не соответсвует ожидаемому
-        } elseif ($operand != 'in' || $count <= 0 || $count > 3) {
+        // Проверить возможность создать экземпляр класса
+        if (!isset($attribute)
+                || !isset($condition)) {
             throw new BuildConditionException('"In" condition is incorrect.');
         }
         $class = $this->prepareConditionClass($operand);
 
-        return $this->ensureCondition($class, $condition, $builder);
+        return new $class($attribute, array_flip($condition), $builder);
     }
 
     /**
@@ -381,17 +398,23 @@ class ConditionBuilder
      */
     protected function buildHashCondition($operand, $conditions, $builder)
     {
+        /** @var HashCondition $class */
         $class = $this->prepareConditionClass($operand);
-        foreach ($conditions as $attribute => &$condition) {
+        $buildConditions = [];
+        foreach ($conditions as $attribute => $condition) {
             if (is_array($condition)) {
-                $condition = $builder->build([
-                    'in', [
-                        $attribute => $condition
-                    ],
+                $buildConditions[] = $builder->build([
+                    'in', $attribute, $condition
                 ]);
+            } elseif (is_scalar($condition)) {
+                $buildConditions[] = $builder->build([
+                    'equal', $attribute, $condition
+                ]);
+            } else {
+                throw new BuildConditionException('"Hash" condition is incorrect.');
             }
         }
-        return $this->ensureCondition($class, $conditions, $builder);
+        return new $class(null, $buildConditions, $builder);
     }
 
     /**
@@ -405,10 +428,19 @@ class ConditionBuilder
      */
     protected function buildLikeCondition($operand, $condition, $builder)
     {
+        // Если массив, представляющий условие не соответсвует ожидаемому
         $count = count($condition);
+        if ($operand != 'like'
+                || 1 > $count || $count > 3) {
+            throw new BuildConditionException('"Like" condition is incorrect.');
+        }
+
         // Формат, избранный в первоначальной реализации
         // ['like' => ['attribute' => 'pattern']]
         if ($count === 1) {
+            $condition = reset($condition);
+            $keys = array_keys($condition);
+            $attribute = reset($keys);
             $condition = reset($condition);
 
         // Формат, реализованный для соответсвия Yii2
@@ -416,30 +448,16 @@ class ConditionBuilder
         } elseif ($count === 2) {
             $attribute = array_shift($condition);
             $condition = array_shift($condition);
-            $condition = [
-                $attribute => $condition,
-            ];
+        }
 
-            // Если массив, представляющий условие не соответсвует ожидаемому
-        } elseif ($operand != 'like' || $count <= 0 || $count > 3) {
+        // Проверить возможность создать экземпляр класса
+        if (!isset($attribute)
+            || !isset($condition)) {
             throw new BuildConditionException('"Like" condition is incorrect.');
         }
         $class = $this->prepareConditionClass($operand);
 
-        return $this->ensureCondition($class, $condition, $builder);
-    }
-
-    /**
-     * Обеспечить экземпляром потребителя объектом условия
-     *
-     * @param string $class имя класса
-     * @param mixed $condition условие, для передачи в конструктор
-     * @param ConditionBuilder $builder построитель запросов
-     * @return Condition построенное условие
-     */
-    protected function ensureCondition($class, $condition, $builder)
-    {
-        return new $class($condition, $builder);
+        return new $class($attribute, $condition, $builder);
     }
 
     /**

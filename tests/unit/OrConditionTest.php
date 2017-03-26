@@ -23,6 +23,9 @@ class OrConditionTest extends Unit
             ]
         ]);
         $this->assertTrue($condition instanceof OrCondition);
+        $this->assertNull($condition->getAttribute());
+        $this->assertTrue(is_array($condition->getCondition()));
+        $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
     }
 
     /**

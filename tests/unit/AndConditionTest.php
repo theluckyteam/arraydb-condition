@@ -22,7 +22,11 @@ class AndConditionTest extends Unit
                 'attribute2' => 'value2'
             ]
         ]);
+
         $this->assertTrue($condition instanceof AndCondition);
+        $this->assertNull($condition->getAttribute());
+        $this->assertTrue(is_array($condition->getCondition()));
+        $this->assertTrue($condition->getBuilder() instanceof ConditionBuilder);
     }
 
     /**

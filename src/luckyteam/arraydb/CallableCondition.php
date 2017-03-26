@@ -12,7 +12,7 @@ class CallableCondition extends Condition
     public function execute($model)
     {
         /** @var callable $condition */
-        $condition = $this->_condition;
+        $condition = $this->getCondition();
         return call_user_func($condition, $model);
     }
 }
